@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Performance</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body{
+            margin:0;
+            background:#eef1f5;
+            font-family:Arial, sans-serif;
+        }
+
+        .container{
+            display:flex;
+        }
+
+        /* Fixed Sidebar */
+        .sidebar{
+            width:250px;
+            height:100vh;
+            position:fixed;
+            top:0;
+            left:0;
+            background:#2c3e50;
+            padding:20px;
+            box-sizing:border-box;
+            overflow-y:auto;
+        }
+
+        .sidebar h2{
+            color:#fff;
+            margin-bottom:25px;
+        }
+
+        .sidebar button{
+            width:100%;
+            padding:12px;
+            margin-bottom:10px;
+            border:none;
+            border-radius:10px;
+            background:#34495e;
+            color:#fff;
+            cursor:pointer;
+            text-align:left;
+            font-size:15px;
+        }
+
+        .sidebar button:hover{
+            background:#3d566e;
+        }
+
+        /* Main */
+        .main-content{
+            margin-left:270px;
+            width:calc(100% - 270px);
+            padding:28px;
+            box-sizing:border-box;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+        }
+
+        .main-content h1{
+            width:100%;
+            max-width:1000px;
+            color:#2c3e50;
+            margin-bottom:20px;
+        }
+
+        /* Stats */
+        .grid{
+            width:100%;
+            max-width:1000px;
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:16px;
+        }
+
+        .stat-card,
+        .chart-card{
+            background:#fff;
+            border-radius:18px;
+            box-shadow:0 8px 24px rgba(0,0,0,0.08);
+        }
+
+        .stat-card{
+            padding:22px;
+            text-align:center;
+        }
+
+        .stat-card h2{
+            margin:0;
+            font-size:28px;
+            color:#2c3e50;
+        }
+
+        .stat-card p{
+            margin-top:8px;
+            color:#7f8c8d;
+        }
+
+        /* Graph Cards full width box */
+        .chart-card{
+            width:100%;
+            max-width:1000px;
+            margin-top:22px;
+            padding:24px;
+            box-sizing:border-box;
+            text-align:center;
+        }
+
+        .chart-card h2{
+            margin:0 0 18px 0;
+            color:#2c3e50;
+            font-size:20px;
+            text-align:left;
+        }
+
+        /* Graph itself smaller centered */
+        .graph-wrap{
+            width:80%;
+            margin:0 auto;
+        }
+
+        canvas{
+            width:100% !important;
+            height:290px !important;
+        }
+
+        .insight{
+            color:#555;
+            line-height:1.7;
+            text-align:left;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>📊 Dashboard</h2>
+
+        <button onclick="window.location.href='/dashboard'">🏠 Home</button>
+        <button onclick="window.location.href='/quiz'">🎯 Quiz</button>
+        <button onclick="window.location.href='/history'">📜 History</button>
+        <button onclick="window.location.href='/performance'">📈 Performance</button>
+        <button onclick="window.location.href='/about'">ℹ️ About</button>
+        <button onclick="window.location.href='/logout'">🚪 Logout</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <h1>📈 Performance Dashboard</h1>
+
+        <!-- Stats -->
+        <div class="grid">
+
+            <div class="stat-card">
+                <h2>{{ stats[0] }}</h2>
+                <p>Total Attempts</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>{{ "%.1f"|format(stats[1]) }}</h2>
+                <p>Average Score</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>{{ stats[2] }}</h2>
+                <p>Best Score</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>{{ "%.1f"|format(stats[3]) }}</h2>
+                <p>Confidence Level</p>
+            </div>
+
+        </div>
+
+        <!-- Graph 1 -->
+        <div class="chart-card">
+            <h2>🧠 Confidence vs Knowledge</h2>
+            <div class="graph-wrap">
+                <canvas id="compareChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Graph 2 -->
+        <div class="chart-card">
+            <h2>📊 Score Performance</h2>
+            <div class="graph-wrap">
+                <canvas id="scoreChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Insight -->
+        <div class="chart-card">
+            <h2>📌 Insight</h2>
+
+            <p class="insight">
+                {% if stats[3] > stats[1] %}
+                    Your confidence is higher than your average score. Focus on reviewing mistakes to improve balance.
+                {% elif stats[3] < stats[1] %}
+                    Your score is stronger than your confidence. Trust your preparation more.
+                {% else %}
+                    Your confidence and knowledge are balanced well.
+                {% endif %}
+            </p>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const attempts   = Number("{{ stats[0] }}");
+    const avgScore   = Number("{{ stats[1] }}");
+    const bestScore  = Number("{{ stats[2] }}");
+    const confidence = Number("{{ stats[3] }}");
+
+    const confidenceScaled = confidence / 20;
+    const knowledge = avgScore;
+
+    /* ===============================
+       GRAPH 1 : Confidence vs Knowledge
+    ================================ */
+    const ctx1 = document.getElementById("compareChart").getContext("2d");
+
+    new Chart(ctx1,{
+        type:"bar",
+        data:{
+            labels:["Confidence","Knowledge"],
+            datasets:[{
+                data:[confidenceScaled, knowledge],
+                backgroundColor:[
+                    "rgba(139,92,246,0.85)",
+                    "rgba(6,182,212,0.85)"
+                ],
+                borderColor:[
+                    "#7c3aed",
+                    "#0891b2"
+                ],
+                borderWidth:2,
+                borderRadius:18,
+                barThickness:120
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+                legend:{display:false}
+            },
+            scales:{
+                y:{
+                    beginAtZero:true,
+                    max:5,
+                    ticks:{
+                        stepSize:1,
+                        color:"#555",
+                        font:{size:14}
+                    },
+                    grid:{
+                        color:"#e5e7eb"
+                    }
+                },
+                x:{
+                    ticks:{
+                        color:"#444",
+                        font:{
+                            size:15,
+                            weight:"bold"
+                        }
+                    },
+                    grid:{display:false}
+                }
+            }
+        }
+    });
+
+    /* ===============================
+       GRAPH 2 : Score Performance
+    ================================ */
+    const ctx2 = document.getElementById("scoreChart").getContext("2d");
+
+    new Chart(ctx2,{
+        type:"line",
+        data:{
+            labels:["Attempts","Avg Score","Best Score"],
+            datasets:[{
+                data:[attempts, avgScore, bestScore],
+                borderColor:"#3b82f6",
+                backgroundColor:"rgba(59,130,246,0.14)",
+                fill:true,
+                tension:0.25,
+                borderWidth:4,
+                pointRadius:6,
+                pointHoverRadius:7,
+                pointBackgroundColor:"#3b82f6",
+                pointBorderColor:"#ffffff",
+                pointBorderWidth:2
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+                legend:{display:false}
+            },
+            layout:{
+                padding:{
+                    top:15
+                }
+            },
+            scales:{
+                y:{
+                    beginAtZero:true,
+                    suggestedMax:5,
+                    ticks:{
+                        stepSize:1,
+                        color:"#555",
+                        font:{size:14}
+                    },
+                    grid:{
+                        color:"#e5e7eb"
+                    }
+                },
+                x:{
+                    ticks:{
+                        color:"#444",
+                        font:{
+                            size:15,
+                            weight:"bold"
+                        }
+                    },
+                    grid:{
+                        color:"#f1f5f9"
+                    }
+                }
+            }
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>

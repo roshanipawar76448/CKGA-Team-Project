@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>📊 Dashboard</h2>
+
+        <button onclick="window.location.href='/dashboard'">🏠 Home</button>
+        <button onclick="window.location.href='/quiz'">🎯 Quiz</button>
+        <button onclick="window.location.href='/history'">📜 History</button>
+        <button onclick="window.location.href='/performance'">📈 Performance</button>
+        <button onclick="window.location.href='/about'">ℹ️ About</button>
+        <button onclick="window.location.href='/logout'">🚪 Logout</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <div class="home-box">
+
+        <h1>Welcome, {{name}} 👋</h1>
+        <p class="subtitle">
+        Analyze confidence, detect knowledge gaps and improve learning.
+        </p>
+
+        <div class="grid-box">
+
+        <div class="feature-card" onclick="window.location.href='/quiz'">
+        <h2>🎯 Smart Quiz</h2>
+        <p>Practice with confidence-based quizzes.</p>
+        </div>
+
+        <div class="feature-card" onclick="window.location.href='/performance'">
+        <h2>📈 Performance</h2>
+        <p>View score trends and progress charts.</p>
+        </div>
+
+        <div class="feature-card" onclick="window.location.href='/history'">
+        <h2>📜 History</h2>
+        <p>See all previous quiz attempts.</p>
+        </div>
+
+        <div class="feature-card" onclick="window.location.href='/about'">
+        <h2>🧠 AI Insight</h2>
+        <p>Know your strengths and weak areas.</p>
+        </div>
+
+    </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>History</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+
+    <style>
+        .main-content{
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:flex-start;
+            padding:40px 20px;
+        }
+
+        .main-content h1{
+            margin-bottom:25px;
+            text-align:center;
+        }
+
+        .history-wrapper{
+            width:100%;
+            max-width:700px;
+        }
+
+        .card-hist{
+            background:white;
+            padding:24px;
+            border-radius:18px;
+            box-shadow:0 6px 16px rgba(0,0,0,0.08);
+            margin-bottom:18px;
+            width:100%;
+            text-align:center;
+        }
+
+        .card-hist p{
+            margin:10px 0;
+            font-size:18px;
+            color:#333;
+        }
+
+        .empty-msg{
+            text-align:center;
+            font-size:20px;
+            color:#666;
+            margin-top:30px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>📊 Dashboard</h2>
+
+        <button onclick="window.location.href='/dashboard'">🏠 Home</button>
+        <button onclick="window.location.href='/quiz'">🎯 Quiz</button>
+        <button onclick="window.location.href='/history'">📜 History</button>
+        <button onclick="window.location.href='/performance'">📈 Performance</button>
+        <button onclick="window.location.href='/about'">ℹ️ About</button>
+        <button onclick="window.location.href='/logout'">🚪 Logout</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="main-content">
+
+        <h1>📜 History</h1>
+
+        <div class="history-wrapper">
+
+            {% if rows %}
+                {% for row in rows %}
+                <div class="card-hist">
+                    <p><strong>Score:</strong> {{ row[0] }}</p>
+                    <p><strong>Calibration:</strong> {{ row[1] }}%</p>
+                    <p><strong>Date:</strong> {{ row[2] }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-msg">No history found.</p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

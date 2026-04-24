@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+    <link rel="stylesheet" href="/static/loginstyle.css">
+</head>
+
+<body>
+
+<div class="container">
+    <div class="card">
+
+        <h2>Register</h2>
+
+        {% if success %}
+        <div class="popup">
+            {{ success }}
+            <br>
+            <a href="/login">Click here to Login</a>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="popup error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            <input type="text" name="fullname" placeholder="Full Name" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="text" name="userid" placeholder="User ID" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="confirm" placeholder="Confirm Password" required>
+            <button>Register</button>
+        </form>
+
+        <p>Already have an account? <a href="/login">Login</a></p>
+
+    </div>
+</div>
+
+</body>
+</html>
