@@ -1,15 +1,17 @@
 from flask import Flask, request, jsonify, render_template, session, redirect
 import mysql.connector
+from openai import OpenAI
+import os
 
 app = Flask(__name__)
 app.secret_key = "secret123"
-
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # ── DATABASE CONNECTION ─────────────────────────────
 def get_db():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="5#sQ&dBL!ra@37",
+        password="suma123",
         database="confidence"
     )
 
@@ -111,6 +113,36 @@ def quiz():
 
     return render_template("index.html", name=session["name"])
 
+@app.route("/quiz_hub")
+def quiz_hub():
+    if "user_id" not in session:
+        return redirect("/login")
+    return render_template("quiz_hub.html", name=session["name"])
+
+@app.route("/topic_quiz")
+def topic_quiz():
+    if "user_id" not in session:
+        return redirect("/login")
+    return render_template("topic_quiz.html", name=session["name"])
+
+@app.route("/live_quiz")
+def live_quiz():
+    if "user_id" not in session:
+        return redirect("/login")
+    return render_template("live_quiz.html", name=session["name"])
+
+@app.route("/daily_quiz")
+def daily_quiz():
+    if "user_id" not in session:
+        return redirect("/login")
+    return render_template("daily_quiz.html", name=session["name"])
+
+@app.route("/custom_quiz")
+def custom_quiz():
+    if "user_id" not in session:
+        return redirect("/login")
+    return render_template("custom_quiz.html", name=session["name"])
+
 # ── SUBMIT RESULT ──────────────────────────────────
 @app.route("/submit_result", methods=["POST"])
 def submit_result():
@@ -179,6 +211,42 @@ def performance():
     conn.close()
 
     return render_template("performance.html", stats=stats)
+ 
+ #AI Insight
+@app.route("/get_ai_insight", methods=["POST"])
+def get_ai_insight():
+
+    data = request.json
+
+    score = data["score"]
+    ch = data["ch"]
+    cl = data["cl"]
+    wh = data["wh"]
+    wl = data["wl"]
+
+    prompt = f"""
+    A student completed a quiz.
+
+    Score: {score}
+    Correct High Confidence: {ch}
+    Correct Low Confidence: {cl}
+    Wrong High Confidence: {wh}
+    Wrong Low Confidence: {wl}
+
+    Give a short personalized learning insight in 3 lines.
+    Mention overconfidence or underconfidence if needed.
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    insight = response.choices[0].message.content
+
+    return jsonify({"insight": insight})
 
 # ── ABOUT PAGE ─────────────────────────────────────
 @app.route("/about")
