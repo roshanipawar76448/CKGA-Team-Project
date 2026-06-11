@@ -205,6 +205,24 @@ function showResults() {
     .then(response => response.json())
     .then(data => console.log("Saved:", data))
     .catch(error => console.log("Error:", error));
+
+    fetch("/get_ai_insight", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        score,
+        ch,
+        cl,
+        wh,
+        wl
+    })
+})
+.then(res => res.json())
+.then(data => {
+    document.getElementById("aiInsight").innerHTML = data.insight;
+});
 }
 
 // ── RESTART ───────────────────────────────────────────────────
