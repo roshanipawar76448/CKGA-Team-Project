@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Quiz</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --accent: #8b5cf6; --gold: #f59e0b; }
+    body { font-family: 'DM Sans', sans-serif; background: #f5f3ff; display: flex; }
+
+    .main-content { display: flex; justify-content: center; align-items: flex-start; padding: 48px 40px; width: calc(100% - 240px); margin-left: 240px; }
+
+    .screen { width: 100%; max-width: 700px; }
+    .hidden { display: none; }
+
+    /* Streak Banner */
+    .streak-banner {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border-radius: 20px;
+      padding: 28px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      box-shadow: 0 10px 40px rgba(124,58,237,0.3);
+    }
+    .streak-left h2 { font-family: 'Syne', sans-serif; font-size: 1.6rem; margin: 0 0 4px; text-align: left; color: white; }
+    .streak-left p { color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0; text-align: left; }
+    .streak-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .streak-label { font-size: 0.8rem; color: rgba(255,255,255,0.6); text-align: center; }
+
+    /* Daily Card */
+    .daily-card {
+      background: white;
+      border-radius: 24px;
+      padding: 36px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .daily-card h1 { font-family: 'Syne', sans-serif; font-size: 2rem; color: #1e1b4b; margin-bottom: 8px; }
+    .daily-card p { color: #6b7280; text-align: left; margin: 0 0 24px; }
+
+    .date-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f5f3ff;
+      color: var(--accent);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .start-daily-btn {
+      background: linear-gradient(135deg, var(--accent), #4f46e5);
+      color: white;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      width: 100%;
+      transition: all 0.2s;
+    }
+    .start-daily-btn:hover { opacity: 0.92; transform: translateY(-2px); }
+
+    .completed-notice {
+      background: #ecfdf5;
+      border: 1.5px solid #10b981;
+      border-radius: 16px;
+      padding: 24px;
+      color: #065f46;
+      text-align: center;
+    }
+    .completed-notice h2 { color: #065f46; font-family: 'Syne', sans-serif; margin-bottom: 8px; }
+    .completed-notice p { color: #047857; text-align: center; margin: 0; }
+
+    /* Quiz / Result inherit from style.css but with purple override */
+    .card { border-radius: 24px; }
+    .progress-bar { background: linear-gradient(135deg, var(--accent), #4f46e5); }
+    #next-btn { background: linear-gradient(135deg, var(--accent), #4f46e5); }
+
+    .option-btn.selected { border-color: var(--accent); background: #f5f3ff; }
+    .option-btn:hover { border-color: var(--accent); }
+
+    .conf-btn.active { border-color: var(--accent); background: #f5f3ff; }
+
+    .result-complete {
+      text-align: center;
+      padding: 12px;
+    }
+    .result-complete .big-score { font-family: 'Syne', sans-serif; font-size: 3.5rem; color: var(--accent); }
+    .result-complete p { color: #6b7280; }
+
+    .stars {
+      font-size: 2rem;
+      letter-spacing: 4px;
+      margin: 12px 0;
+    }
+
+    /* History mini */
+    .history-mini {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    }
+    .history-mini h3 { font-family: 'Syne', sans-serif; color: #1e1b4b; margin-bottom: 16px; font-size: 1.1rem; }
+    .hist-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 0.9rem;
+    }
+    .hist-row:last-child { border-bottom: none; }
+    .hist-date { color: #6b7280; }
+    .hist-score { font-weight: 600; color: var(--accent); font-family: 'DM Sans', sans-serif; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>📊 Dashboard</h2>
+  <button onclick="window.location.href='/dashboard'">🏠 Home</button>
+  <button onclick="window.location.href='/quiz_hub'">🎮 Quiz Hub</button>
+  <button onclick="window.location.href='/quiz'">🎯 Classic Quiz</button>
+  <button onclick="window.location.href='/history'">📜 History</button>
+  <button onclick="window.location.href='/performance'">📈 Performance</button>
+  <button onclick="window.location.href='/about'">ℹ️ About</button>
+  <button onclick="window.location.href='/logout'">🚪 Logout</button>
+</div>
+
+<div class="main-content">
+
+  <!-- HOME -->
+  <div id="home-screen" class="screen">
+
+    <div class="streak-banner">
+      <div class="streak-left">
+        <h2>🔥 Daily Streak</h2>
+        <p>Complete today's challenge to keep it going!</p>
+      </div>
+      <div>
+        <div class="streak-num" id="streak-display">0</div>
+        <div class="streak-label">days</div>
+      </div>
+    </div>
+
+    <div class="daily-card">
+      <div class="date-badge">📅 <span id="today-date"></span></div>
+      <h1>Today's Challenge</h1>
+      <p>5 curated questions across different topics. New set every day!</p>
+
+      <div id="start-section">
+        <button class="start-daily-btn" onclick="startDaily()">🗓️ Start Today's Quiz</button>
+      </div>
+      <div id="done-section" class="hidden">
+        <div class="completed-notice">
+          <h2>✅ Already Completed!</h2>
+          <p>You scored <strong><span id="done-score">0</span>/5</strong> today. Come back tomorrow for a new challenge!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-mini">
+      <h3>Recent Daily Scores</h3>
+      <div id="recent-history">
+        <p style="color:#9ca3af;font-size:0.9rem;text-align:left;">No history yet. Complete your first daily quiz!</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz-screen" class="screen hidden">
+    <div class="card">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <p id="question-count">Question 1 of 5</p>
+      <h2 id="question-text">Question goes here</h2>
+      <div id="options-container"></div>
+      <div class="confidence-section">
+        <p>How confident are you?</p>
+        <div class="confidence-buttons">
+          <button class="conf-btn" id="conf-low"  onclick="selectConfidence('Low')">😟 Low</button>
+          <button class="conf-btn" id="conf-med"  onclick="selectConfidence('Medium')">😐 Medium</button>
+          <button class="conf-btn" id="conf-high" onclick="selectConfidence('High')">😄 High</button>
+        </div>
+      </div><br>
+      <button id="next-btn" onclick="nextQuestion()" disabled>Next →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="result-screen" class="screen hidden">
+    <div class="card">
+      <div class="result-complete">
+        <div class="big-score"><span id="score-display">0</span>/5</div>
+        <div class="stars" id="stars-display">⭐⭐⭐⭐⭐</div>
+        <p id="result-msg"></p>
+      </div>
+
+      <div class="breakdown-grid">
+        <div class="breakdown-card good"><span class="big-num" id="count-ch">0</span><p>Correct + High</p></div>
+        <div class="breakdown-card warn"><span class="big-num" id="count-cl">0</span><p>Correct + Low</p></div>
+        <div class="breakdown-card danger"><span class="big-num" id="count-wh">0</span><p>Wrong + High</p></div>
+        <div class="breakdown-card neutral"><span class="big-num" id="count-wl">0</span><p>Wrong + Low</p></div>
+      </div>
+
+      <div id="analysis-message" class="analysis-msg"></div>
+
+      <h3>Review:</h3>
+      <div id="review-container"></div>
+      <br>
+      <button onclick="location.href='/quiz_hub'" style="background:linear-gradient(135deg,#8b5cf6,#4f46e5);width:100%;">← Back to Quiz Hub</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Daily questions pool — rotates by day of year
+const DAILY_POOL = [
+  [{q:"What does HTTP stand for?",opts:["HyperText Transfer Protocol","High Transfer Text Protocol","HyperText Transmission Protocol","Hyper Transfer Text Process"],a:0},
+   {q:"Which planet is closest to the Sun?",opts:["Venus","Earth","Mars","Mercury"],a:3},
+   {q:"What is 15% of 200?",opts:["20","25","30","35"],a:2},
+   {q:"In which year did the French Revolution begin?",opts:["1776","1789","1799","1804"],a:1},
+   {q:"What is the largest ocean on Earth?",opts:["Atlantic","Indian","Arctic","Pacific"],a:3}],
+
+  [{q:"What does RAM stand for?",opts:["Read Access Memory","Random Access Memory","Run Active Memory","Remote Access Module"],a:1},
+   {q:"What is the chemical symbol for water?",opts:["WA","H2O","HO2","OX"],a:1},
+   {q:"What is the square root of 144?",opts:["11","12","13","14"],a:1},
+   {q:"Who was the first US President?",opts:["John Adams","Thomas Jefferson","George Washington","Benjamin Franklin"],a:2},
+   {q:"What is the capital of Australia?",opts:["Sydney","Melbourne","Canberra","Brisbane"],a:2}],
+
+  [{q:"Which language is used for web page structure?",opts:["Python","Java","HTML","C++"],a:2},
+   {q:"What gas do plants absorb for photosynthesis?",opts:["Oxygen","Nitrogen","Carbon Dioxide","Hydrogen"],a:2},
+   {q:"How many sides does a hexagon have?",opts:["5","6","7","8"],a:1},
+   {q:"Which empire was ruled by Julius Caesar?",opts:["Greek","Persian","Roman","Ottoman"],a:2},
+   {q:"Which river is the longest in the world?",opts:["Amazon","Nile","Yangtze","Mississippi"],a:1}],
+
+  [{q:"What is the powerhouse of the cell?",opts:["Nucleus","Ribosome","Mitochondria","Golgi Apparatus"],a:2},
+   {q:"How many bones are in the adult human body?",opts:["186","196","206","216"],a:2},
+   {q:"What is the smallest prime number?",opts:["0","1","2","3"],a:2},
+   {q:"What is the largest country by area?",opts:["China","USA","Canada","Russia"],a:3},
+   {q:"What does DNA stand for?",opts:["Deoxyribonucleic Acid","Digital Nucleic Acid","Dual Nitrogen Acid","Deoxynitrogen Acid"],a:0}],
+
+  [{q:"What is the speed of light approx in km/s?",opts:["150,000","300,000","500,000","1,000,000"],a:1},
+   {q:"Which animal is the King of the Jungle?",opts:["Tiger","Elephant","Lion","Cheetah"],a:2},
+   {q:"How many colors are in a rainbow?",opts:["5","6","7","8"],a:2},
+   {q:"In which year did World War II end?",opts:["1943","1944","1945","1946"],a:2},
+   {q:"What is the binary of decimal 10?",opts:["1000","1010","1100","0110"],a:1}],
+
+  [{q:"What does CPU stand for?",opts:["Central Processing Unit","Computer Personal Unit","Central Program Utility","Core Processing Unit"],a:0},
+   {q:"What planet is known as the Red Planet?",opts:["Venus","Mars","Jupiter","Saturn"],a:1},
+   {q:"What is π rounded to 2 decimal places?",opts:["3.12","3.14","3.16","3.18"],a:1},
+   {q:"Which ancient wonder was in Alexandria?",opts:["Hanging Gardens","Colossus of Rhodes","The Lighthouse","Statue of Zeus"],a:2},
+   {q:"Which continent has the most countries?",opts:["Asia","Europe","Africa","South America"],a:2}],
+
+  [{q:"What is the chemical symbol for gold?",opts:["Go","Gd","Au","Ag"],a:2},
+   {q:"How many letters are in the English alphabet?",opts:["24","25","26","27"],a:2},
+   {q:"What is the square root of 169?",opts:["11","12","13","14"],a:2},
+   {q:"Who painted the Mona Lisa?",opts:["Michelangelo","Raphael","Da Vinci","Botticelli"],a:2},
+   {q:"Mount Everest is in which mountain range?",opts:["Alps","Andes","Himalayas","Rockies"],a:2}],
+];
+
+// State
+let questions = [];
+let currentQ = 0, selectedAnswer = null, selectedConf = null, results = [];
+
+// Get today's key
+function todayKey() {
+  const d = new Date();
+  return `daily_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+}
+
+// Load streak and history
+function loadState() {
+  const today = new Date();
+  document.getElementById("today-date").textContent = today.toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  const streak = parseInt(localStorage.getItem("daily_streak")||"0");
+  document.getElementById("streak-display").textContent = streak;
+
+  const done = localStorage.getItem(todayKey());
+  if (done) {
+    const data = JSON.parse(done);
+    document.getElementById("done-score").textContent = data.score;
+    document.getElementById("done-section").classList.remove("hidden");
+    document.getElementById("start-section").classList.add("hidden");
+  }
+
+  // Recent history
+  const hist = JSON.parse(localStorage.getItem("daily_history")||"[]");
+  if (hist.length > 0) {
+    const rev = document.getElementById("recent-history");
+    rev.innerHTML = hist.slice(0,7).map(h => `
+      <div class="hist-row">
+        <span class="hist-date">${h.date}</span>
+        <span class="hist-score">${h.score}/5</span>
+      </div>
+    `).join("");
+  }
+}
+loadState();
+
+function startDaily() {
+  // Pick question set by day of year
+  const d = new Date();
+  const dayOfYear = Math.floor((d - new Date(d.getFullYear(),0,0)) / 86400000);
+  questions = DAILY_POOL[dayOfYear % DAILY_POOL.length];
+  currentQ=0; results=[];
+  show("quiz-screen");
+  loadQuestion();
+}
+
+function loadQuestion() {
+  selectedAnswer=null; selectedConf=null;
+  const q = questions[currentQ];
+  document.getElementById("question-text").textContent = q.q;
+  document.getElementById("question-count").textContent = `Question ${currentQ+1} of ${questions.length}`;
+  document.getElementById("progress-bar").style.width = (currentQ/questions.length*100)+"%";
+  const c = document.getElementById("options-container");
+  c.innerHTML = "";
+  q.opts.forEach((opt,i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i);
+    c.appendChild(btn);
+  });
+  ["conf-low","conf-med","conf-high"].forEach(id => document.getElementById(id).classList.remove("active"));
+  document.getElementById("next-btn").disabled = true;
+}
+
+function selectAnswer(i) {
+  selectedAnswer=i;
+  document.querySelectorAll(".option-btn").forEach((b,j) => b.classList.toggle("selected",j===i));
+  checkReady();
+}
+function selectConfidence(l) {
+  selectedConf=l;
+  document.getElementById("conf-low").classList.toggle("active",l==="Low");
+  document.getElementById("conf-med").classList.toggle("active",l==="Medium");
+  document.getElementById("conf-high").classList.toggle("active",l==="High");
+  checkReady();
+}
+function checkReady() {
+  document.getElementById("next-btn").disabled = (selectedAnswer===null||selectedConf===null);
+}
+function nextQuestion() {
+  const q = questions[currentQ];
+  results.push({question:q.q,yourAnswer:q.opts[selectedAnswer],rightAnswer:q.opts[q.a],correct:selectedAnswer===q.a,confidence:selectedConf});
+  currentQ++;
+  if(currentQ<questions.length) loadQuestion(); else showResults();
+}
+
+function showResults() {
+  show("result-screen");
+  let score=0, ch=0, cl=0, wh=0, wl=0;
+  results.forEach(r => {
+    if(r.correct){score++; r.confidence==="High"?ch++:cl++;}
+    else{r.confidence==="High"?wh++:wl++;}
+  });
+
+  document.getElementById("score-display").textContent = score;
+  document.getElementById("count-ch").textContent = ch;
+  document.getElementById("count-cl").textContent = cl;
+  document.getElementById("count-wh").textContent = wh;
+  document.getElementById("count-wl").textContent = wl;
+
+  // Stars
+  const stars = "⭐".repeat(score) + "☆".repeat(5-score);
+  document.getElementById("stars-display").textContent = stars;
+
+  const msgs = ["📘 Keep going — every attempt builds knowledge!","👏 Not bad! Review the missed ones.","✅ Good effort! Almost there.","🌟 Great job! Strong performance.","🏆 Perfect score! Outstanding!"];
+  document.getElementById("result-msg").textContent = msgs[score];
+
+  document.getElementById("analysis-message").innerHTML = wh>cl&&wh>0?"⚠️ Overconfidence detected.":cl>wh&&cl>=2?"💡 Underconfidence detected.":"✅ Confidence balance looks good.";
+
+  const rev = document.getElementById("review-container");
+  rev.innerHTML = results.map((r,i) => `<div class="review-item"><p><b>Q${i+1}:</b> ${r.question}</p><p>Your Answer: ${r.yourAnswer} ${r.correct?"✅":"❌"} | Correct: ${r.rightAnswer}</p></div>`).join("");
+
+  // Save to localStorage
+  const key = todayKey();
+  localStorage.setItem(key, JSON.stringify({score}));
+
+  // Update streak
+  const d = new Date();
+  const yd = new Date(d); yd.setDate(yd.getDate()-1);
+  const yesterdayKey = `daily_${yd.getFullYear()}_${yd.getMonth()}_${yd.getDate()}`;
+  const prevStreak = parseInt(localStorage.getItem("daily_streak")||"0");
+  const newStreak = localStorage.getItem(yesterdayKey) ? prevStreak+1 : 1;
+  localStorage.setItem("daily_streak", newStreak);
+
+  // Save history
+  const hist = JSON.parse(localStorage.getItem("daily_history")||"[]");
+  hist.unshift({date:d.toLocaleDateString("en-US",{month:"short",day:"numeric"}),score});
+  localStorage.setItem("daily_history", JSON.stringify(hist.slice(0,30)));
+
+  // Submit to DB
+  const calibration = (ch+wh)>0 ? (ch/(ch+wh))*100 : 0;
+  fetch("/submit_result",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({score,total:5,ch,cl,wh,wl,calibration})});
+}
+
+function show(id) {
+  ["home-screen","quiz-screen","result-screen"].forEach(s => document.getElementById(s).classList.toggle("hidden",s!==id));
+}
+</script>
+</body>
+</html>

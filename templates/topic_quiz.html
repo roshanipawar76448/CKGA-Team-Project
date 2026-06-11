@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Topic Quiz</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent: #f97316;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: #f0f4f8; display: flex; }
+
+    /* Topic Selector Screen */
+    #topic-screen { text-align: center; }
+    #topic-screen h1 { font-family: 'Syne', sans-serif; font-size: 2.4rem; color: #0f172a; margin-bottom: 8px; }
+    #topic-screen p  { color: #64748b; margin-bottom: 32px; }
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+    .topic-btn {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 24px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 1rem;
+      color: #0f172a;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .topic-btn:hover, .topic-btn.selected {
+      border-color: var(--accent);
+      background: #fff7ed;
+      transform: translateY(-3px);
+    }
+    .topic-btn .t-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .topic-btn .t-name { font-weight: 600; display: block; }
+    .topic-btn .t-count { font-size: 0.8rem; color: #94a3b8; }
+
+    #start-topic-btn {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: white; border: none;
+      padding: 14px 40px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      opacity: 0.5;
+      pointer-events: none;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    #start-topic-btn.ready { opacity: 1; pointer-events: all; }
+    #start-topic-btn:hover { transform: translateY(-2px); }
+
+    /* Re-use existing quiz card styles but override some */
+    .card { max-width: 750px; width: 100%; }
+    #question-text { font-size: 1.5rem; }
+
+    .topic-tag {
+      display: inline-block;
+      background: #fff7ed;
+      color: #f97316;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .result-topics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+    .result-topic-badge {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>📊 Dashboard</h2>
+  <button onclick="window.location.href='/dashboard'">🏠 Home</button>
+  <button onclick="window.location.href='/quiz_hub'">🎮 Quiz Hub</button>
+  <button onclick="window.location.href='/quiz'">🎯 Classic Quiz</button>
+  <button onclick="window.location.href='/history'">📜 History</button>
+  <button onclick="window.location.href='/performance'">📈 Performance</button>
+  <button onclick="window.location.href='/about'">ℹ️ About</button>
+  <button onclick="window.location.href='/logout'">🚪 Logout</button>
+</div>
+
+<div class="main-content">
+
+  <!-- TOPIC SELECTOR -->
+  <div id="topic-screen" class="screen">
+    <div class="card">
+      <h1>📚 Topic Quiz</h1>
+      <p>Choose a topic to begin your quiz</p>
+      <div class="topic-grid" id="topic-grid"></div>
+      <button id="start-topic-btn" onclick="startTopicQuiz()">Start Quiz →</button>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quiz-screen" class="screen hidden">
+    <div class="card">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <p id="question-count">Question 1 of 5</p>
+      <div id="topic-indicator" class="topic-tag"></div>
+      <h2 id="question-text">Question goes here</h2>
+      <div id="options-container"></div>
+      <div class="confidence-section">
+        <p>How confident are you?</p>
+        <div class="confidence-buttons">
+          <button class="conf-btn" id="conf-low" onclick="selectConfidence('Low')">😟 Low</button>
+          <button class="conf-btn" id="conf-med" onclick="selectConfidence('Medium')">😐 Medium</button>
+          <button class="conf-btn" id="conf-high" onclick="selectConfidence('High')">😄 High</button>
+        </div>
+      </div><br>
+      <button id="next-btn" onclick="nextQuestion()" disabled>Next →</button>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="result-screen" class="screen hidden">
+    <div class="card">
+      <h1>📊 Results</h1>
+      <div class="score-box">
+        <p>Score: <strong><span id="score-display">0</span> / <span id="total-display">0</span></strong></p>
+      </div>
+      <h3>Analysis:</h3>
+      <div class="breakdown-grid">
+        <div class="breakdown-card good"><span class="big-num" id="count-ch">0</span><p>Correct + High</p></div>
+        <div class="breakdown-card warn"><span class="big-num" id="count-cl">0</span><p>Correct + Low</p></div>
+        <div class="breakdown-card danger"><span class="big-num" id="count-wh">0</span><p>Wrong + High</p></div>
+        <div class="breakdown-card neutral"><span class="big-num" id="count-wl">0</span><p>Wrong + Low</p></div>
+      </div>
+      <div id="analysis-message" class="analysis-msg"></div>
+      <div id="topic-breakdown" class="result-topics"></div>
+      <h3>Review:</h3>
+      <div id="review-container"></div>
+      <br>
+      <button onclick="location.href='/topic_quiz'" style="background:linear-gradient(135deg,#f97316,#ea580c)">Try Another Topic</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── QUESTION BANK ───────────────────────────────────────
+const TOPICS = {
+  "💻 Technology": [
+    { q:"What does CPU stand for?", opts:["Central Processing Unit","Computer Personal Unit","Central Program Utility","Core Processing Unit"], a:0 },
+    { q:"Which language is primarily used for web structure?", opts:["Python","Java","HTML","C++"], a:2 },
+    { q:"What does RAM stand for?", opts:["Read Access Memory","Random Access Memory","Run Active Memory","Remote Access Module"], a:1 },
+    { q:"What does HTTP stand for?", opts:["HyperText Transfer Protocol","High Transfer Text Protocol","HyperText Transmission Protocol","Hyper Transfer Text Process"], a:0 },
+    { q:"What is the binary representation of the decimal number 10?", opts:["1000","1010","1100","0110"], a:1 }
+  ],
+  "🔬 Science": [
+    { q:"What is the chemical symbol for water?", opts:["WA","H2O","HO2","OX"], a:1 },
+    { q:"What planet is closest to the Sun?", opts:["Venus","Earth","Mars","Mercury"], a:3 },
+    { q:"What is the speed of light (approx) in km/s?", opts:["150,000","300,000","500,000","1,000,000"], a:1 },
+    { q:"What gas do plants absorb for photosynthesis?", opts:["Oxygen","Nitrogen","Carbon Dioxide","Hydrogen"], a:2 },
+    { q:"What is the powerhouse of the cell?", opts:["Nucleus","Ribosome","Mitochondria","Golgi Apparatus"], a:2 }
+  ],
+  "📐 Mathematics": [
+    { q:"What is the value of π (pi) rounded to 2 decimal places?", opts:["3.12","3.14","3.16","3.18"], a:1 },
+    { q:"What is the square root of 144?", opts:["11","12","13","14"], a:1 },
+    { q:"If a triangle has angles 60°, 60°, what is the third angle?", opts:["30°","60°","90°","120°"], a:1 },
+    { q:"What is 15% of 200?", opts:["20","25","30","35"], a:2 },
+    { q:"How many sides does a hexagon have?", opts:["5","6","7","8"], a:1 }
+  ],
+  "🌍 History": [
+    { q:"In which year did World War II end?", opts:["1943","1944","1945","1946"], a:2 },
+    { q:"Who was the first President of the United States?", opts:["John Adams","Thomas Jefferson","George Washington","Benjamin Franklin"], a:2 },
+    { q:"What ancient wonder was located in Alexandria?", opts:["Hanging Gardens","Colossus of Rhodes","The Lighthouse","Statue of Zeus"], a:2 },
+    { q:"The French Revolution began in which year?", opts:["1776","1789","1799","1804"], a:1 },
+    { q:"Which empire was ruled by Julius Caesar?", opts:["Greek","Persian","Roman","Ottoman"], a:2 }
+  ],
+  "🌐 Geography": [
+    { q:"What is the largest country by area?", opts:["China","USA","Canada","Russia"], a:3 },
+    { q:"Which river is the longest in the world?", opts:["Amazon","Nile","Yangtze","Mississippi"], a:1 },
+    { q:"What is the capital of Australia?", opts:["Sydney","Melbourne","Canberra","Brisbane"], a:2 },
+    { q:"Which continent has the most countries?", opts:["Asia","Europe","Africa","South America"], a:2 },
+    { q:"Mount Everest is located in which mountain range?", opts:["Alps","Andes","Himalayas","Rockies"], a:2 }
+  ],
+  "🎭 General Knowledge": [
+    { q:"How many colors are in a rainbow?", opts:["5","6","7","8"], a:2 },
+    { q:"What is the smallest prime number?", opts:["0","1","2","3"], a:2 },
+    { q:"Which animal is known as the King of the Jungle?", opts:["Tiger","Elephant","Lion","Cheetah"], a:2 },
+    { q:"How many letters are in the English alphabet?", opts:["24","25","26","27"], a:2 },
+    { q:"What is the largest ocean on Earth?", opts:["Atlantic","Indian","Arctic","Pacific"], a:3 }
+  ]
+};
+
+let selectedTopic = null;
+let questions = [];
+let currentQ = 0;
+let selectedAnswer = null;
+let selectedConf = null;
+let results = [];
+let topicScores = {};
+
+// Build topic grid
+const topicGrid = document.getElementById("topic-grid");
+Object.keys(TOPICS).forEach(t => {
+  const btn = document.createElement("button");
+  btn.className = "topic-btn";
+  btn.innerHTML = `<span class="t-icon">${t.split(" ")[0]}</span><span class="t-name">${t.split(" ").slice(1).join(" ")}</span><span class="t-count">${TOPICS[t].length} questions</span>`;
+  btn.onclick = () => {
+    document.querySelectorAll(".topic-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    selectedTopic = t;
+    document.getElementById("start-topic-btn").classList.add("ready");
+  };
+  topicGrid.appendChild(btn);
+});
+
+function startTopicQuiz() {
+  questions = [...TOPICS[selectedTopic]];
+  currentQ = 0; results = [];
+  show("quiz-screen");
+  loadQuestion();
+}
+
+function loadQuestion() {
+  selectedAnswer = null; selectedConf = null;
+  const q = questions[currentQ];
+  document.getElementById("question-text").textContent = q.q;
+  document.getElementById("question-count").textContent = `Question ${currentQ+1} of ${questions.length}`;
+  document.getElementById("topic-indicator").textContent = selectedTopic;
+  document.getElementById("progress-bar").style.width = (currentQ/questions.length*100)+"%";
+
+  const c = document.getElementById("options-container");
+  c.innerHTML = "";
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i);
+    c.appendChild(btn);
+  });
+  ["conf-low","conf-med","conf-high"].forEach(id => document.getElementById(id).classList.remove("active"));
+  document.getElementById("next-btn").disabled = true;
+}
+
+function selectAnswer(index) {
+  selectedAnswer = index;
+  document.querySelectorAll(".option-btn").forEach((b,i) => b.classList.toggle("selected", i===index));
+  checkReady();
+}
+function selectConfidence(level) {
+  selectedConf = level;
+  document.getElementById("conf-low").classList.toggle("active", level==="Low");
+  document.getElementById("conf-med").classList.toggle("active", level==="Medium");
+  document.getElementById("conf-high").classList.toggle("active", level==="High");
+  checkReady();
+}
+function checkReady() {
+  document.getElementById("next-btn").disabled = (selectedAnswer===null || selectedConf===null);
+}
+
+function nextQuestion() {
+  const q = questions[currentQ];
+  const correct = selectedAnswer === q.a;
+  results.push({ question: q.q, yourAnswer: q.opts[selectedAnswer], rightAnswer: q.opts[q.a], correct, confidence: selectedConf });
+  currentQ++;
+  if (currentQ < questions.length) loadQuestion();
+  else showResults();
+}
+
+function showResults() {
+  show("result-screen");
+  let score=0, ch=0, cl=0, wh=0, wl=0;
+  results.forEach(r => {
+    if(r.correct){ score++; r.confidence==="High"?ch++:cl++; }
+    else { r.confidence==="High"?wh++:wl++; }
+  });
+  const calibration = (ch+wh)>0 ? (ch/(ch+wh))*100 : 0;
+
+  document.getElementById("score-display").textContent = score;
+  document.getElementById("total-display").textContent = questions.length;
+  document.getElementById("count-ch").textContent = ch;
+  document.getElementById("count-cl").textContent = cl;
+  document.getElementById("count-wh").textContent = wh;
+  document.getElementById("count-wl").textContent = wl;
+
+  let msg = wh>cl&&wh>0 ? "⚠️ Overconfidence detected." : cl>wh&&cl>=2 ? "💡 Underconfidence detected." : score===questions.length ? "🌟 Perfect score with balanced confidence!" : score>=3 ? "✅ Good performance." : "📘 Keep practicing.";
+  document.getElementById("analysis-message").innerHTML = msg;
+
+  document.getElementById("topic-breakdown").innerHTML = `<div class="result-topic-badge">📚 Topic: ${selectedTopic}</div><div class="result-topic-badge">🎯 Calibration: ${calibration.toFixed(1)}%</div>`;
+
+  const rev = document.getElementById("review-container");
+  rev.innerHTML = "";
+  results.forEach((r,i) => {
+    rev.innerHTML += `<div class="review-item"><p><b>Q${i+1}:</b> ${r.question}</p><p>Your Answer: ${r.yourAnswer} ${r.correct?"✅":"❌"}</p><p>Correct: ${r.rightAnswer} | Confidence: ${r.confidence}</p></div>`;
+  });
+
+  fetch("/submit_result",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({score,total:questions.length,ch,cl,wh,wl,calibration})});
+}
+
+function show(id) {
+  ["topic-screen","quiz-screen","result-screen"].forEach(s => document.getElementById(s).classList.toggle("hidden", s!==id));
+}
+</script>
+</body>
+</html>

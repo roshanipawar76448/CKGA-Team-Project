@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Quiz</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --accent: #0ea5e9; --danger: #ef4444; --ok: #10b981; }
+    body { font-family: 'DM Sans', sans-serif; background: #0f172a; display: flex; }
+
+    /* Override sidebar for dark bg */
+    .main-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      width: calc(100% - 240px);
+      margin-left: 240px;
+      min-height: 100vh;
+    }
+
+    .screen { width: 100%; max-width: 780px; }
+    .hidden { display: none; }
+
+    /* CARD */
+    .live-card {
+      background: #1e293b;
+      border-radius: 28px;
+      padding: 44px;
+      color: white;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+      border: 1px solid #334155;
+      text-align: center;
+    }
+
+    /* HOME */
+    .live-card h1 { font-family: 'Syne', sans-serif; font-size: 2.6rem; margin-bottom: 12px; color: var(--accent); }
+    .live-card > p { color: #94a3b8; font-size: 1.05rem; margin-bottom: 30px; }
+
+    .live-rules {
+      background: #0f172a;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+    .live-rules p { color: #94a3b8; font-size: 0.95rem; margin: 8px 0; text-align: left; }
+    .live-rules strong { color: var(--accent); }
+
+    .difficulty-row { display: flex; gap: 12px; justify-content: center; margin-bottom: 28px; }
+    .diff-btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 2px solid #334155;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+    .diff-btn.sel-easy   { border-color: var(--ok);    color: var(--ok);    background: rgba(16,185,129,0.1); }
+    .diff-btn.sel-medium { border-color: #f59e0b;      color: #f59e0b;      background: rgba(245,158,11,0.1); }
+    .diff-btn.sel-hard   { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.1); }
+
+    .start-live-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 16px 44px;
+      border-radius: 14px;
+      font-size: 1.15rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      transition: all 0.2s;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .start-live-btn.ready { opacity: 1; pointer-events: all; }
+    .start-live-btn:hover { transform: scale(1.03); }
+
+    /* QUIZ */
+    .quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .q-counter { font-family: 'DM Mono', monospace; color: #64748b; font-size: 0.9rem; }
+    .live-score-badge {
+      background: rgba(14,165,233,0.15);
+      color: var(--accent);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.9rem;
+    }
+
+    /* TIMER */
+    .timer-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .timer-ring {
+      position: relative;
+      width: 100px;
+      height: 100px;
+    }
+    .timer-ring svg { transform: rotate(-90deg); }
+    .timer-ring circle { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+    .ring-bg { stroke: #1e293b; }
+    .ring-fill { stroke: var(--accent); }
+    .timer-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 1.8rem;
+      font-weight: 500;
+      color: white;
+    }
+    .timer-label { color: #475569; font-size: 0.8rem; margin-top: 8px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+    .ring-fill.warning { stroke: #f59e0b; }
+    .ring-fill.danger  { stroke: var(--danger); }
+    .timer-number.danger { color: var(--danger); animation: pulse 0.5s ease infinite alternate; }
+    @keyframes pulse { to { transform: scale(1.1); } }
+
+    /* QUESTION */
+    .q-text { font-family: 'Syne', sans-serif; font-size: 1.4rem; color: white; margin-bottom: 24px; line-height: 1.4; }
+
+    /* OPTIONS */
+    .opts { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+    .live-opt {
+      background: #0f172a;
+      border: 2px solid #334155;
+      border-radius: 14px;
+      padding: 16px 20px;
+      color: #e2e8f0;
+      cursor: pointer;
+      text-align: left;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .live-opt .opt-letter {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: #1e293b;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.85rem; color: #64748b;
+      flex-shrink: 0;
+    }
+    .live-opt:hover { border-color: var(--accent); background: rgba(14,165,233,0.08); }
+    .live-opt.selected { border-color: var(--accent); background: rgba(14,165,233,0.15); }
+    .live-opt.selected .opt-letter { background: var(--accent); color: white; }
+    .live-opt.correct { border-color: var(--ok); background: rgba(16,185,129,0.15); }
+    .live-opt.correct .opt-letter { background: var(--ok); color: white; }
+    .live-opt.wrong { border-color: var(--danger); background: rgba(239,68,68,0.1); }
+    .live-opt.wrong .opt-letter { background: var(--danger); color: white; }
+
+    /* SPEED BONUS */
+    .speed-bonus {
+      display: none;
+      padding: 10px 20px;
+      background: rgba(16,185,129,0.15);
+      border: 1px solid var(--ok);
+      border-radius: 12px;
+      color: var(--ok);
+      font-size: 0.95rem;
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 16px;
+    }
+
+    .next-live-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px 36px;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      display: none;
+      margin: 0 auto;
+    }
+    .next-live-btn:hover { opacity: 0.9; }
+
+    /* TIMEOUT FLASH */
+    .timeout-flash {
+      display: none;
+      color: var(--danger);
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      margin-bottom: 14px;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+
+    /* RESULTS */
+    .score-big {
+      font-family: 'Syne', sans-serif;
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .score-sub { color: #64748b; margin-bottom: 24px; }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 14px;
+      margin: 24px 0;
+    }
+    .stat-box {
+      background: #0f172a;
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .stat-box .val { font-family: 'DM Mono', monospace; font-size: 1.8rem; color: white; }
+    .stat-box .lbl { font-size: 0.8rem; color: #475569; margin-top: 4px; }
+
+    .review-live {
+      text-align: left;
+      max-height: 280px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+    .rev-item {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      border-left: 4px solid #334155;
+    }
+    .rev-item.right { border-color: var(--ok); }
+    .rev-item.wrong { border-color: var(--danger); }
+    .rev-item p { color: #94a3b8; font-size: 0.9rem; text-align: left; margin: 4px 0; }
+    .rev-item .q  { color: #e2e8f0; font-weight: 600; }
+
+    .replay-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px 36px;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>📊 Dashboard</h2>
+  <button onclick="window.location.href='/dashboard'">🏠 Home</button>
+  <button onclick="window.location.href='/quiz_hub'">🎮 Quiz Hub</button>
+  <button onclick="window.location.href='/quiz'">🎯 Classic Quiz</button>
+  <button onclick="window.location.href='/history'">📜 History</button>
+  <button onclick="window.location.href='/performance'">📈 Performance</button>
+  <button onclick="window.location.href='/about'">ℹ️ About</button>
+  <button onclick="window.location.href='/logout'">🚪 Logout</button>
+</div>
+
+<div class="main-content">
+
+  <!-- HOME -->
+  <div id="home-screen" class="screen">
+    <div class="live-card">
+      <h1>⚡ Live Quiz</h1>
+      <p>Answer fast. Score points. Beat the clock.</p>
+      <div class="live-rules">
+        <p>⏱️ Each question has a <strong>countdown timer</strong></p>
+        <p>🚀 Answer faster = <strong>Speed Bonus points</strong></p>
+        <p>⏰ Time runs out = question marked <strong>wrong</strong></p>
+        <p>🎯 Base: <strong>10 pts</strong> per correct answer + up to <strong>5 bonus pts</strong></p>
+      </div>
+      <p style="color:#64748b;margin-bottom:12px;font-size:0.95rem;">Select difficulty:</p>
+      <div class="difficulty-row">
+        <button class="diff-btn" id="d-easy"   onclick="setDiff('easy')">🟢 Easy (20s)</button>
+        <button class="diff-btn" id="d-medium" onclick="setDiff('medium')">🟡 Medium (15s)</button>
+        <button class="diff-btn" id="d-hard"   onclick="setDiff('hard')">🔴 Hard (10s)</button>
+      </div>
+      <button class="start-live-btn" id="start-btn" onclick="startLive()">Start Live Quiz ⚡</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz-screen" class="screen hidden">
+    <div class="live-card">
+      <div class="quiz-header">
+        <span class="q-counter" id="q-counter">1 / 10</span>
+        <span class="live-score-badge">Score: <span id="live-score">0</span></span>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="timer-ring">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="0"/>
+            <circle class="ring-fill" id="ring" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-number" id="timer-num">20</div>
+        </div>
+        <div class="timer-label">seconds remaining</div>
+      </div>
+
+      <div class="timeout-flash" id="timeout-flash">⏰ Time's up!</div>
+      <div class="speed-bonus" id="speed-bonus"></div>
+
+      <div class="q-text" id="q-text"></div>
+      <div class="opts" id="opts"></div>
+
+      <button class="next-live-btn" id="next-btn" onclick="nextQ()">Next →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="result-screen" class="screen hidden">
+    <div class="live-card">
+      <div class="score-big" id="final-score">0</div>
+      <div class="score-sub">points earned</div>
+
+      <div class="stat-row">
+        <div class="stat-box"><div class="val" id="r-correct">0</div><div class="lbl">Correct</div></div>
+        <div class="stat-box"><div class="val" id="r-speed">0</div><div class="lbl">Speed Bonus</div></div>
+        <div class="stat-box"><div class="val" id="r-streak">0</div><div class="lbl">Best Streak</div></div>
+      </div>
+
+      <div class="review-live" id="review-live"></div>
+
+      <button class="replay-btn" onclick="location.href='/live_quiz'">Play Again ⚡</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+  {q:"What does CPU stand for?",opts:["Central Processing Unit","Computer Personal Unit","Central Program Utility","Core Processing Unit"],a:0},
+  {q:"Which is the largest ocean?",opts:["Atlantic","Indian","Arctic","Pacific"],a:3},
+  {q:"What is the chemical symbol for gold?",opts:["Go","Gd","Au","Ag"],a:2},
+  {q:"How many continents are there?",opts:["5","6","7","8"],a:2},
+  {q:"What is the square root of 169?",opts:["11","12","13","14"],a:2},
+  {q:"Which planet is known as the Red Planet?",opts:["Venus","Mars","Jupiter","Saturn"],a:1},
+  {q:"What language is primarily used for web page structure?",opts:["Python","Java","HTML","C++"],a:2},
+  {q:"How many bones are in the adult human body?",opts:["186","196","206","216"],a:2},
+  {q:"In which year did World War II end?",opts:["1943","1944","1945","1946"],a:2},
+  {q:"What is the smallest prime number?",opts:["0","1","2","3"],a:2},
+  {q:"Who painted the Mona Lisa?",opts:["Michelangelo","Raphael","Da Vinci","Botticelli"],a:2},
+  {q:"What does DNA stand for?",opts:["Deoxyribonucleic Acid","Digital Nucleic Acid","Dual Nitrogen Acid","Deoxynitrogen Acid"],a:0},
+];
+
+const DIFF = { easy: 20, medium: 15, hard: 10 };
+let difficulty = null;
+let timeLimit = 20;
+let questions = [];
+let currentQ = 0;
+let totalScore = 0;
+let speedBonus = 0;
+let correctCount = 0;
+let streak = 0;
+let bestStreak = 0;
+let timer = null;
+let timeLeft = 20;
+let answered = false;
+let results = [];
+
+function setDiff(d) {
+  difficulty = d;
+  timeLimit = DIFF[d];
+  document.querySelectorAll(".diff-btn").forEach(b => {
+    b.className = "diff-btn";
+    b.classList.add(`sel-${d}`);
+  });
+  // only highlight selected
+  document.querySelectorAll(".diff-btn").forEach(b => b.className = "diff-btn");
+  document.getElementById(`d-${d}`).classList.add(`sel-${d}`);
+  document.getElementById("start-btn").classList.add("ready");
+}
+
+function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
+
+function startLive() {
+  questions = shuffle(ALL_QUESTIONS).slice(0,8);
+  currentQ=0; totalScore=0; speedBonus=0; correctCount=0; streak=0; bestStreak=0; results=[];
+  show("quiz-screen");
+  loadQ();
+}
+
+function loadQ() {
+  answered = false;
+  timeLeft = timeLimit;
+  const q = questions[currentQ];
+
+  document.getElementById("q-counter").textContent = `${currentQ+1} / ${questions.length}`;
+  document.getElementById("q-text").textContent = q.q;
+  document.getElementById("timeout-flash").style.display = "none";
+  document.getElementById("speed-bonus").style.display = "none";
+  document.getElementById("next-btn").style.display = "none";
+
+  const opts = document.getElementById("opts");
+  opts.innerHTML = "";
+  const letters = ["A","B","C","D"];
+  q.opts.forEach((opt,i) => {
+    const btn = document.createElement("button");
+    btn.className = "live-opt";
+    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span>${opt}`;
+    btn.onclick = () => selectLive(i, btn);
+    opts.appendChild(btn);
+  });
+
+  updateRing();
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timer);
+  timer = setInterval(() => {
+    timeLeft--;
+    updateRing();
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      if (!answered) timeUp();
+    }
+  }, 1000);
+}
+
+function updateRing() {
+  const pct = timeLeft / timeLimit;
+  const dash = 264;
+  const offset = dash * (1 - pct);
+  const ring = document.getElementById("ring");
+  const num = document.getElementById("timer-num");
+  ring.style.strokeDashoffset = offset;
+  num.textContent = timeLeft;
+
+  ring.className = "ring-fill" + (pct < 0.25 ? " danger" : pct < 0.5 ? " warning" : "");
+  num.className = "timer-number" + (pct < 0.25 ? " danger" : "");
+}
+
+function selectLive(idx, btn) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timer);
+
+  const q = questions[currentQ];
+  const correct = idx === q.a;
+  const allOpts = document.querySelectorAll(".live-opt");
+
+  allOpts.forEach((b,i) => {
+    if (i === q.a) b.classList.add("correct");
+    else if (i === idx && !correct) b.classList.add("wrong");
+  });
+
+  let pts = 0;
+  let bonus = 0;
+  if (correct) {
+    pts = 10;
+    bonus = Math.floor((timeLeft / timeLimit) * 5);
+    speedBonus += bonus;
+    totalScore += pts + bonus;
+    correctCount++;
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+    document.getElementById("live-score").textContent = totalScore;
+
+    const sb = document.getElementById("speed-bonus");
+    sb.textContent = `+${pts} pts ${bonus>0 ? `⚡ Speed Bonus: +${bonus}` : ""}`;
+    sb.style.display = "block";
+  } else {
+    streak = 0;
+  }
+
+  results.push({ q: q.q, your: q.opts[idx], right: q.opts[q.a], correct, pts: pts+bonus });
+  document.getElementById("next-btn").style.display = "block";
+}
+
+function timeUp() {
+  answered = true;
+  const q = questions[currentQ];
+  document.querySelectorAll(".live-opt").forEach((b,i) => { if(i===q.a) b.classList.add("correct"); });
+  document.getElementById("timeout-flash").style.display = "block";
+  results.push({ q: q.q, your: "No answer", right: q.opts[q.a], correct: false, pts: 0 });
+  streak = 0;
+  document.getElementById("next-btn").style.display = "block";
+}
+
+function nextQ() {
+  currentQ++;
+  if (currentQ < questions.length) loadQ();
+  else showResults();
+}
+
+function showResults() {
+  show("result-screen");
+  document.getElementById("final-score").textContent = totalScore;
+  document.getElementById("r-correct").textContent = correctCount;
+  document.getElementById("r-speed").textContent = speedBonus;
+  document.getElementById("r-streak").textContent = bestStreak;
+
+  const rev = document.getElementById("review-live");
+  rev.innerHTML = "";
+  results.forEach((r,i) => {
+    rev.innerHTML += `<div class="rev-item ${r.correct?'right':'wrong'}"><p class="q">Q${i+1}: ${r.q}</p><p>Your answer: ${r.your} ${r.correct?"✅":"❌"} · Correct: ${r.right} · +${r.pts} pts</p></div>`;
+  });
+
+  fetch("/submit_result",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({score:correctCount,total:questions.length,ch:0,cl:correctCount,wh:0,wl:questions.length-correctCount,calibration:0})});
+}
+
+function show(id) {
+  ["home-screen","quiz-screen","result-screen"].forEach(s => document.getElementById(s).classList.toggle("hidden",s!==id));
+}
+</script>
+</body>
+</html>

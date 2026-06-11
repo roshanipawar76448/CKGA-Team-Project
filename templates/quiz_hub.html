@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz Hub</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent: #f97316;
+      --accent2: #0ea5e9;
+      --accent3: #8b5cf6;
+      --accent4: #10b981;
+      --dark: #0f172a;
+    }
+
+    body { font-family: 'DM Sans', sans-serif; background: #f0f4f8; }
+
+    .main-content { padding: 48px 40px; }
+
+    .hub-header { margin-bottom: 40px; }
+    .hub-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    .hub-header p { font-size: 1.1rem; color: #64748b; text-align: left; }
+
+    .quiz-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      max-width: 1000px;
+    }
+
+    .quiz-card {
+      background: white;
+      border-radius: 24px;
+      padding: 36px 32px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .quiz-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+    }
+    .quiz-card.orange::before { background: var(--accent); }
+    .quiz-card.blue::before   { background: var(--accent2); }
+    .quiz-card.purple::before { background: var(--accent3); }
+    .quiz-card.green::before  { background: var(--accent4); }
+
+    .quiz-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+
+    .quiz-card.orange:hover { border-color: var(--accent); }
+    .quiz-card.blue:hover   { border-color: var(--accent2); }
+    .quiz-card.purple:hover { border-color: var(--accent3); }
+    .quiz-card.green:hover  { border-color: var(--accent4); }
+
+    .card-icon { font-size: 3rem; margin-bottom: 16px; }
+    .quiz-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      color: var(--dark);
+      margin-bottom: 10px;
+      text-align: left;
+    }
+    .quiz-card p { font-size: 0.95rem; color: #64748b; text-align: left; margin: 0; }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .badge.orange { background: #fff7ed; color: var(--accent); }
+    .badge.blue   { background: #f0f9ff; color: var(--accent2); }
+    .badge.purple { background: #f5f3ff; color: var(--accent3); }
+    .badge.green  { background: #ecfdf5; color: var(--accent4); }
+
+    .arrow {
+      position: absolute;
+      bottom: 24px; right: 28px;
+      font-size: 1.4rem;
+      opacity: 0.3;
+      transition: all 0.3s;
+    }
+    .quiz-card:hover .arrow { opacity: 1; transform: translateX(4px); }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="sidebar">
+    <h2>📊 Dashboard</h2>
+    <button onclick="window.location.href='/dashboard'">🏠 Home</button>
+    <button onclick="window.location.href='/quiz_hub'">🎮 Quiz Hub</button>
+    <button onclick="window.location.href='/quiz'">🎯 Classic Quiz</button>
+    <button onclick="window.location.href='/history'">📜 History</button>
+    <button onclick="window.location.href='/performance'">📈 Performance</button>
+    <button onclick="window.location.href='/about'">ℹ️ About</button>
+    <button onclick="window.location.href='/logout'">🚪 Logout</button>
+  </div>
+
+  <div class="main-content">
+    <div class="hub-header">
+      <h1>🎮 Quiz Hub</h1>
+      <p>Choose your quiz mode — classic, live, daily or custom.</p>
+    </div>
+
+    <div class="quiz-grid">
+
+      <div class="quiz-card orange" onclick="window.location.href='/topic_quiz'">
+        <div class="card-icon">📚</div>
+        <div class="badge orange">Multiple Topics</div>
+        <h2>Topic Quiz</h2>
+        <p>Choose from Science, Math, History, Tech and more. Confidence tracking included.</p>
+        <span class="arrow">→</span>
+      </div>
+
+      <div class="quiz-card blue" onclick="window.location.href='/live_quiz'">
+        <div class="card-icon">⚡</div>
+        <div class="badge blue">Live · Timed</div>
+        <h2>Live Quiz</h2>
+        <p>Beat the clock! Each question has a countdown. Score bonus points for speed.</p>
+        <span class="arrow">→</span>
+      </div>
+
+      <div class="quiz-card purple" onclick="window.location.href='/daily_quiz'">
+        <div class="card-icon">🗓️</div>
+        <div class="badge purple">Daily Challenge</div>
+        <h2>Daily Quiz</h2>
+        <p>A fresh 5-question challenge every day. Maintain your streak!</p>
+        <span class="arrow">→</span>
+      </div>
+
+      <div class="quiz-card green" onclick="window.location.href='/custom_quiz'">
+        <div class="card-icon">✏️</div>
+        <div class="badge green">Build Your Own</div>
+        <h2>Custom Quiz</h2>
+        <p>Create your own questions and share them. Perfect for studying specific topics.</p>
+        <span class="arrow">→</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
